@@ -1,0 +1,4 @@
+[keys.normal]
+C-s = [":w!"]
+C-a = [":insert-output cat .helix/cell.py"]
+C-e = [":insert-output cat .helix/scratch.py"]

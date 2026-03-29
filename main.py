@@ -12,6 +12,7 @@ with app.setup:
     from dataclasses import dataclass, field
     from itertools import count
     from typing import Callable
+    from mermaid_builder.flowchart import Chart, Node, ChartDir
 
 
 @app.function
@@ -171,50 +172,42 @@ def _():
     return L, a_2, b_2, c_2, f_1
 
 
-@app.cell
-def _():
-    from graphviz import Digraph
+@app.function
+def trace(root):
+    nodes, edges = set(), set()
+    stack = [root]
 
-    def trace(root):
-        nodes, edges = set(), set()
-        stack = [root]
-
-        while stack:
-            v = stack.pop()
-            if v in nodes:
-                continue
-            nodes.add(v)
-            stack.extend(v.children)
-            for child in v.children:
-                edges.add((child, v))
-        return nodes, edges
-
-    return Digraph, trace
+    while stack:
+        v = stack.pop()
+        if v in nodes:
+            continue
+        nodes.add(v)
+        stack.extend(v.children)
+        for child in v.children:
+            edges.add((child, v))
+    return nodes, edges
 
 
-@app.cell
-def _(Digraph, trace):
-    def draw_dot(root):
-        dot = Digraph(format='svg', graph_attr={"rankdir": "LR"})
-        nodes, edges = trace(root)
-        for n in nodes:
-            uid = str(id(n))
-            dot.node(name=uid, label=f"{n.label} | data {n.data:0.4f} | grad {n.grad:0.4f}", shape="record")
-            if n.op != Op.Leaf:
-                op = n.op.value
-                dot.node(name=uid + op, label=op)
-                dot.edge(uid + op, uid)
+@app.function
+def draw_dot(root):
+    G = Chart("computational graph", direction=ChartDir.LR)
+    nodes, edges = trace(root)
+    for n in nodes:
+        uid = str(id(n))
+        G.add_node(Node(f"{n.label}\ndata {n.data:0.4f}\ngrad {n.grad:0.4f}", id=uid))
+        if n.op != Op.Leaf:
+            op = n.op.value
+            G.add_node(Node(op, id=uid + op))
+            G.add_link_between(uid + op, uid)
 
-        for n1, n2 in edges:
-            dot.edge(str(id(n1)), str(id(n2)) + n2.op.value)
+    for n1, n2 in edges:
+        G.add_link_between(str(id(n1)), str(id(n2)) + n2.op.value)
 
-        return dot
-
-    return (draw_dot,)
+    return mo.mermaid(str(G))
 
 
 @app.cell
-def _(L, draw_dot):
+def _(L):
     draw_dot(L)
     return
 
@@ -382,7 +375,7 @@ def _():
 
 
 @app.cell
-def _(draw_dot, o):
+def _(o):
     draw_dot(o)
     return
 
@@ -522,7 +515,7 @@ def _():
 
 
 @app.cell
-def _(draw_dot, o_1):
+def _(o_1):
     draw_dot(o_1)
     return
 
@@ -547,7 +540,7 @@ def _(n_1, o_1, x1w1_1, x1w1x2w2_1, x2w2_1):
 
 
 @app.cell
-def _(draw_dot, o_1):
+def _(o_1):
     draw_dot(o_1)
     return
 
@@ -591,7 +584,7 @@ def _(o_1):
 
 
 @app.cell
-def _(draw_dot, o_1):
+def _(o_1):
     draw_dot(o_1)
     return
 
@@ -745,20 +738,20 @@ def _():
 
 
 @app.cell
-def _(draw_dot, o_2):
+def _(o_2):
     draw_dot(o_2)
     return
 
 
 @app.cell
-def _(draw_dot, o_2):
+def _(o_2):
     o_2.backpropagate()
     draw_dot(o_2)
     return
 
 
 @app.cell
-def _(draw_dot):
+def _():
     a_4 = Value_2(3.0, label='a')
     b_6 = (a_4 + a_4).set_label('b')
     b_6.backpropagate()
@@ -806,7 +799,7 @@ def _(o_3):
 
 
 @app.cell
-def _(draw_dot, o_3):
+def _(o_3):
     draw_dot(o_3)
     return
 
@@ -935,7 +928,7 @@ class MLP:
 
 
 @app.cell
-def _(draw_dot):
+def _():
     net_0 = MLP(3, [3, 4, 1])
     def _():
         x = [2.0, 3.0, 5.6, 0.1]
@@ -946,10 +939,10 @@ def _(draw_dot):
 
 
 @app.cell
-def _(draw_dot, net_0):
+def _(net_0):
     from types import SimpleNamespace
     def train_setup():
-    
+
         xs = [
             [2.0, 3.0, -1.0],
             [3.0, -1.0, 0.5],
@@ -966,13 +959,12 @@ def _(draw_dot, net_0):
 
         loss = sum(howfar)
         print("loss", loss.data)
-    
+
 
         loss.backpropagate()
 
-        return SimpleNamespace(xs=xs, ys=ys), draw_dot(loss)
-    fn_get_loss, ret = train_setup()
-    ret
+        return SimpleNamespace(xs=xs, ys=ys)
+    fn_get_loss = train_setup()
     return (fn_get_loss,)
 
 
@@ -1049,7 +1041,7 @@ def _():
                 [1.0, 1.0, -1.0],
             ]
         ys = [1.0, -1.0, -1.0, 1.0]
-    
+
         for _ in range(100):
             y_pred = list(map(net_1, xs))
             sse = sum((ygt-yout)**2 for ygt, yout in zip(ys, y_pred))
@@ -1057,9 +1049,9 @@ def _():
 
             for p in net_1.parameters():
                 p.grad = 0.0
-        
+
             sse.backpropagate()
-    
+
             for p in net_1.parameters():
                 p.data -= lr * p.grad
 

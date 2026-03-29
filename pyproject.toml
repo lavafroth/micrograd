@@ -5,8 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "graphviz>=0.21",
     "marimo>=0.21.1",
     "matplotlib>=3.10.8",
+    "mermaid-builder>=0.0.3",
     "torch>=2.11.0",
 ]

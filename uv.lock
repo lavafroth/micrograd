@@ -227,15 +227,6 @@ wheels = [
 ]
 
 [[package]]
-name = "graphviz"
-version = "0.21"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f8/b3/3ac91e9be6b761a4b30d66ff165e54439dcd48b83f4e20d644867215f6ca/graphviz-0.21.tar.gz", hash = "sha256:20743e7183be82aaaa8ad6c93f8893c923bd6658a04c32ee115edb3c8a835f78", size = 200434, upload-time = "2025-06-15T09:35:05.824Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/4c/e0ce1ef95d4000ebc1c11801f9b944fa5910ecc15b5e351865763d8657f8/graphviz-0.21-py3-none-any.whl", hash = "sha256:54f33de9f4f911d7e84e4191749cac8cc5653f815b06738c54db9a15ab8b1e42", size = 47300, upload-time = "2025-06-15T09:35:04.433Z" },
-]
-
-[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -438,17 +429,17 @@ name = "mario"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "graphviz" },
     { name = "marimo" },
     { name = "matplotlib" },
+    { name = "mermaid-builder" },
     { name = "torch" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "graphviz", specifier = ">=0.21" },
     { name = "marimo", specifier = ">=0.21.1" },
     { name = "matplotlib", specifier = ">=3.10.8" },
+    { name = "mermaid-builder", specifier = ">=0.0.3" },
     { name = "torch", specifier = ">=2.11.0" },
 ]
 
@@ -558,6 +549,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4d/4b/e7beb6bbd49f6bae727a12b270a2654d13c397576d25bd6786e47033300f/matplotlib-3.10.8-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:595ba4d8fe983b88f0eec8c26a241e16d6376fe1979086232f481f8f3f67494c", size = 9614011, upload-time = "2025-12-10T22:56:33.85Z" },
     { url = "https://files.pythonhosted.org/packages/7c/e6/76f2813d31f032e65f6f797e3f2f6e4aab95b65015924b1c51370395c28a/matplotlib-3.10.8-cp314-cp314t-win_amd64.whl", hash = "sha256:25d380fe8b1dc32cf8f0b1b448470a77afb195438bafdf1d858bfb876f3edf7b", size = 8362801, upload-time = "2025-12-10T22:56:36.107Z" },
     { url = "https://files.pythonhosted.org/packages/5d/49/d651878698a0b67f23aa28e17f45a6d6dd3d3f933fa29087fa4ce5947b5a/matplotlib-3.10.8-cp314-cp314t-win_arm64.whl", hash = "sha256:113bb52413ea508ce954a02c10ffd0d565f9c3bc7f2eddc27dfe1731e71c7b5f", size = 8192560, upload-time = "2025-12-10T22:56:38.008Z" },
+]
+
+[[package]]
+name = "mermaid-builder"
+version = "0.0.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/57/d83e7e62de05adbba2476b7596ed4a253907a4f4c19be74c40e7ce2944dc/mermaid_builder-0.0.3.tar.gz", hash = "sha256:3016ef25668bcb28de4a4746aabdfaa531c06a7e7f89fa1596e6a274c7c73705", size = 7183, upload-time = "2024-06-14T17:14:51.223Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5f/4e/7480454b7ee7de5c2c8561e83b4564196ecf1c9847e893dfbb51032e5a3b/mermaid_builder-0.0.3-py3-none-any.whl", hash = "sha256:decd7d25268bda7a520ce0cab7873e50fac1e33b41e5a1dd7daec5c0ae3c7ffb", size = 6696, upload-time = "2024-06-14T17:14:38.48Z" },
 ]
 
 [[package]]

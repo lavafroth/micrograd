@@ -1,4 +1,6 @@
 [keys.normal]
-C-s = [":w!"]
-C-a = [":insert-output cat .helix/cell.py"]
-C-e = [":insert-output cat .helix/scratch.py"]
+# "C-r" = [":write", ":sh kitty @ send-text --match cmdline:python 'prun(\"%{buffer_name}\")\n'"]
+# "C-a" = [":write", ":sh kitty @ send-text --match cmdline:python 'new_cell(\"%{buffer_name}\")\n'", "select_all", "delete_selection"]
+# "C-r" = [":write",
+# ":pipe-to kitty @ send-text --match cmdline:python '%%cpaste\n' && kitty @ send-text --match cmdline:python --stdin && kitty @ send-text --match cmdline:python -- '\n--\n'"]
+"C-r" = [":write", ":pipe-to cat > .cell && kitty @ send-text --match cmdline:python '%%load .cell\n\n'"]

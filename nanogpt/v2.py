@@ -2,14 +2,17 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-batch_size = 32
-block_size = 8
-max_iters = 30000
-eval_interval = 3000
-learning_rate = 1e-3
+batch_size = 64
+block_size = 256
+max_iters = 5000
+eval_interval = 500
+learning_rate = 3e-4
 device = "cuda" if torch.cuda.is_available() else "cpu"
 eval_iters = 200
-n_embed = 32
+n_embed = 384
+n_head = 6
+n_layer = 6
+dropout = 0.2
 
 torch.manual_seed(5)
 
@@ -76,7 +79,10 @@ class FeedForward(nn.Module):
     def __init__(self, n_embed):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(n_embed, 4 * n_embed), nn.ReLU(), nn.Linear(4 * n_embed, n_embed)
+            nn.Linear(n_embed, 4 * n_embed),
+            nn.ReLU(), ##
+            nn.Linear(4 * n_embed, n_embed),
+            nn.Dropout(dropout)
         )
 
     def forward(self, x):
@@ -96,6 +102,7 @@ class Head(nn.Module):
         self.register_buffer(
             "tril", torch.tril(torch.ones(block_size, block_size)).log()
         )
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor):
         B, T, C = x.shape
@@ -105,6 +112,7 @@ class Head(nn.Module):
 
         wei = q @ k.transpose(-2, -1) * C**-0.5 + self.tril[:T, :T]  # ty:ignore[not-subscriptable]
         wei = F.softmax(wei, dim=-1)
+        wei = self.dropout(wei)
         out = wei @ v
         return out
 
@@ -116,6 +124,7 @@ class MultiHeadAttention(nn.Module):
 
         n_embed = head_size * num_heads
         self.proj = nn.Linear(n_embed, n_embed)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         out = torch.cat(
@@ -123,6 +132,7 @@ class MultiHeadAttention(nn.Module):
             dim=-1,  # along channel dimension
         )
         out = self.proj(out)
+        out = self.dropout(out)
 
         return out
 
@@ -148,18 +158,8 @@ class BigramLanguageModel(nn.Module):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, n_embed)
         self.position_embedding_table = nn.Embedding(block_size, n_embed)
-        self.blocks = nn.Sequential(
-            Block(n_embed, 4),
-            Block(n_embed, 4),
-            Block(n_embed, 4),
-            nn.LayerNorm(n_embed)
-        )
-        # self.self_attention_head = Head(n_embed)
-        # num_heads = 4
-        # head_size = n_embed // num_heads
-        # self.self_attention_heads = MultiHeadAttention(head_size, num_heads)
-
-        # self.ffwd = FeedForward(n_embed)
+        self.blocks = nn.Sequential(*[Block(n_embed, n_head) for _ in range(n_layer)])
+        self.layernorm_final = nn.LayerNorm(n_embed)
         self.lm_head = nn.Linear(n_embed, vocab_size)
 
     def forward(self, indices: torch.Tensor, targets: torch.Tensor | None = None):
@@ -173,6 +173,7 @@ class BigramLanguageModel(nn.Module):
         # x = self.ffwd(x)
 
         x = self.blocks(x)
+        x = self.layernorm_final(x)
         logits = self.lm_head(x)
         # (batch, time, vocab_size)
 
@@ -215,6 +216,8 @@ for run in range(max_iters):
     optimizer.step()
 
 print(loss.item())
+
+torch.save(m.state_dict(), 'model.pth')
 
 prompt = ""
 while prompt != "stop":

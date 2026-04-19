@@ -75,7 +75,9 @@ def estimate_loss(model):
 class FeedForward(nn.Module):
     def __init__(self, n_embed):
         super().__init__()
-        self.net = nn.Sequential(nn.Linear(n_embed, n_embed), nn.ReLU())
+        self.net = nn.Sequential(
+            nn.Linear(n_embed, 4 * n_embed), nn.ReLU(), nn.Linear(4 * n_embed, n_embed)
+        )
 
     def forward(self, x):
         return self.net(x)
@@ -112,11 +114,33 @@ class MultiHeadAttention(nn.Module):
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])
 
-    def forward(self, x):
-        return torch.cat(
-            [head(x) for head in self.heads], dim=-1
-        )  # along channel dimension
+        n_embed = head_size * num_heads
+        self.proj = nn.Linear(n_embed, n_embed)
 
+    def forward(self, x):
+        out = torch.cat(
+            [head(x) for head in self.heads],
+            dim=-1,  # along channel dimension
+        )
+        out = self.proj(out)
+
+        return out
+
+
+class Block(nn.Module):
+    def __init__(self, n_embed, n_heads):
+        super().__init__()
+        assert n_embed % n_heads == 0
+        head_size = n_embed // n_heads
+        self.sa = MultiHeadAttention(head_size, n_heads)
+        self.ffwd = FeedForward(n_embed)
+        self.ln1 = nn.LayerNorm(n_embed)
+        self.ln2 = nn.LayerNorm(n_embed)
+
+    def forward(self, x):
+        x = x + self.sa(self.ln1(x))
+        x = x + self.ffwd(self.ln2(x))
+        return x
 
 
 class BigramLanguageModel(nn.Module):
@@ -124,12 +148,18 @@ class BigramLanguageModel(nn.Module):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, n_embed)
         self.position_embedding_table = nn.Embedding(block_size, n_embed)
+        self.blocks = nn.Sequential(
+            Block(n_embed, 4),
+            Block(n_embed, 4),
+            Block(n_embed, 4),
+            nn.LayerNorm(n_embed)
+        )
         # self.self_attention_head = Head(n_embed)
-        num_heads = 4
-        head_size = n_embed // num_heads
-        self.self_attention_heads = MultiHeadAttention(head_size, num_heads)
+        # num_heads = 4
+        # head_size = n_embed // num_heads
+        # self.self_attention_heads = MultiHeadAttention(head_size, num_heads)
 
-        self.ffwd = FeedForward(n_embed)
+        # self.ffwd = FeedForward(n_embed)
         self.lm_head = nn.Linear(n_embed, vocab_size)
 
     def forward(self, indices: torch.Tensor, targets: torch.Tensor | None = None):
@@ -139,8 +169,10 @@ class BigramLanguageModel(nn.Module):
         positional_embeddings = self.position_embedding_table(torch.arange(T))
         x = token_embeddings + positional_embeddings
         # x = self.self_attention_heads(x)
-        x = self.self_attention_heads(x)  # still (batch, token, n_embed)
-        x = self.ffwd(x)
+        # x = self.self_attention_heads(x)  # still (batch, token, n_embed)
+        # x = self.ffwd(x)
+
+        x = self.blocks(x)
         logits = self.lm_head(x)
         # (batch, time, vocab_size)
 
